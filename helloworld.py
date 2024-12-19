@@ -11,13 +11,11 @@ delta_v = v_e * np.log(m_w / m_d) # total change in the rockets velocity
 d = 6371000 # starting height of the rocket relative to the earth, meters
 g = -9.81 # gravitational constant for earth
 G = 6.6743e-11 # Gravitational constant
-force_thrust = 34500000
+force_thrust = 34500000 # Newtons
 
 t_step_size = 0.1
 
 Q = delta_v / (v_e * t_burn1)
-
-altitude = 0
 
 def mass(time):
     return m_p * np.exp(-Q * time) + m_d
@@ -29,20 +27,24 @@ def mass(time):
 
 # def acceleration(time):
 
-def get_acceleration(time):
-    return (force_thrust - ((G * m_e * mass(time)) / (altitude + d)**2)) / mass(time)
+def get_acceleration(time, altitude):
+    return (force_thrust - (G * m_e) / (altitude + d)**2) / mass(time)
 
-i = 0
+
 times = np.arange(0, t_burn1, t_step_size)
 altitudes = np.zeros(len(times))
-altitudes[0] = altitude
+velocities = np.zeros(len(times))
+accelerations = np.zeros(len(times))
+altitudes[0] = 0
+velocities[0] = 0
+accelerations[0] = get_acceleration(0, altitudes[0])
 
-for t in range(1, len(times)):
+for i in range(1, len(times)):
     time = times[i]
-    accel = get_acceleration(time)
-    altitudes[i] = altitudes[i-1] + accel * time**2 + 0.5 * (accel) * time**2
-    i += 1
-
+    accel = get_acceleration(time, altitudes[i-1])
+    accelerations[i] = accel
+    velocities[i] = velocities[i-1] + accel * t_step_size
+    altitudes[i] = altitudes[i-1] + velocities[i-1] * t_step_size
 
 # def euler_method(h0, v0, a0, t0, tf, dt):
 
