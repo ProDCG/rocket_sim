@@ -11,50 +11,72 @@ delta_v = v_e * np.log(m_w / m_d) # total change in the rockets velocity
 d = 6371000 # starting height of the rocket relative to the earth, meters
 g = -9.81 # gravitational constant for earth
 G = 6.6743e-11 # Gravitational constant
+force_thrust = 34500000
 
-t_step_size = 0.0001
+t_step_size = 0.1
 
 Q = delta_v / (v_e * t_burn1)
+
+altitude = 0
 
 def mass(time):
     return m_p * np.exp(-Q * time) + m_d
 
-def acceleration(height, time):
-    left = (m_p * delta_v * np.exp(-delta_v / v_e))/ (t_burn1 * mass(time))
-    right = (G * m_e) / (height**2)
-    return np.abs(right - left)
+# def acceleration(height, time):
+#     left = (m_p * delta_v * np.exp(-delta_v / v_e))/ (t_burn1 * mass(time))
+#     right = (G * m_e) / (height**2)
+#     return np.abs(right - left)
 
-def euler_method(h0, v0, a0, t0, tf, dt):
+# def acceleration(time):
 
-    times = np.arange(0, tf, dt)
-    heights = np.zeros(len(times))
-    velocities = np.zeros(len(times))
-    acceleration_values = np.zeros(len(times))
+def get_acceleration(time):
+    return (force_thrust - ((G * m_e * mass(time)) / (altitude + d)**2)) / mass(time)
+
+i = 0
+times = np.arange(0, t_burn1, t_step_size)
+altitudes = np.zeros(len(times))
+altitudes[0] = altitude
+
+for t in range(1, len(times)):
+    time = times[i]
+    accel = get_acceleration(time)
+    altitudes[i] = altitudes[i-1] + accel * time**2 + 0.5 * (accel) * time**2
+    i += 1
+
+
+# def euler_method(h0, v0, a0, t0, tf, dt):
+
+#     times = np.arange(0, tf, dt)
+#     heights = np.zeros(len(times))
+#     velocities = np.zeros(len(times))
+#     acceleration_values = np.zeros(len(times))
     
-    heights[0] = h0
-    velocities[0] = v0
-    acceleration_values[0] = a0
+#     heights[0] = h0
+#     velocities[0] = v0
+#     acceleration_values[0] = a0
     
-    for i in range(1, len(times)):
-        t = times[i-1]
+#     for i in range(1, len(times)):
+#         t = times[i-1]
         
-        current_acceleration = acceleration(heights[i-1], t)
-        acceleration_values[i] = current_acceleration
+#         current_acceleration = acceleration(heights[i-1], t)
+#         acceleration_values[i] = current_acceleration
 
-        heights[i] = heights[i-1] + velocities[i-1] * t_step_size
-        velocities[i] = velocities[i-1] + current_acceleration * t_step_size
-    return times, heights, velocities, acceleration_values
+#         heights[i] = heights[i-1] + velocities[i-1] * t_step_size
+#         velocities[i] = velocities[i-1] + current_acceleration * t_step_size
+#     return times, heights, velocities, acceleration_values
 
-times, heights, velocities, accelerations = euler_method(d, 0, 0, 0, t_burn1, t_step_size)
-print(heights)
-print(np.abs((heights[-1] - heights[0]) / 1609.0))
-print(accelerations[0])
-print(accelerations[1])
+# times, heights, velocities, accelerations = euler_method(d, 0, 0, 0, t_burn1, t_step_size)
+
+
+# print(heights)
+# print(np.abs((heights[-1] - heights[0]) / 1609.0))
+# print(accelerations[0])
+# print(accelerations[1])
 
 plt.figure(figsize=(10,6))
 
 plt.subplot(2, 1, 1)
-plt.plot(times, accelerations, label="Height (m)")
+plt.plot(times, altitudes, label="Height (m)")
 plt.xlabel('Time (s)')
 plt.ylabel('Height (m)')
 plt.grid(True)
